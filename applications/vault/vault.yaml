@@ -16,7 +16,7 @@ spec:
       valueFiles: 
       - $values/applications/vault/values.yaml
     targetRevision: 0.28.1
-  - repoURL: https://github.com/rafimojabi/devopszen.git 
+  - repoURL: https://github.com/RStenzhorn/gitops.git
     targetRevision: HEAD
     ref: values
   syncPolicy:
