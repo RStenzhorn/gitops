@@ -14,7 +14,7 @@ spec:
     chart: vault
     helm:
       valueFiles: 
-      - $values/applications/vault/values.yaml
+      - $values/vault/values.yaml
     targetRevision: 0.28.1
   - repoURL: https://github.com/RStenzhorn/gitops.git
     targetRevision: HEAD

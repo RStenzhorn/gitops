@@ -123,16 +123,20 @@ extraObjects:
               command:
                 - sh
                 - "-c"
-                - "find . -name 'Chart.yaml' | grep -qz . && find . -name 'values.yaml'"
+                - "find . -name 'Chart.yaml' && find . -name 'values.yaml'"
           generate:
             command:
-              - sh
+              - bash
               - "-c"
               - |
-                helm template $ARGOCD_APP_NAME --include-crds . |
-                argocd-vault-plugin generate -
-          lockRepo: false 
-
+                HELM_OUTPUT=$(helm template $ARGOCD_APP_NAME -n $ARGOCD_APP_NAMESPACE -f <(echo "$ARGOCD_ENV_HELM_VALUES") .)
+                SKIP_VAULT=$(echo "$ARGOCD_ENV_HELM_VALUES" | grep -i "skipVaultPlugin" | grep -i "true" || true)
+                if [[ -z "$SKIP_VAULT" ]]; then
+                  echo "$HELM_OUTPUT" | argocd-vault-plugin generate -
+                else
+                  echo "$HELM_OUTPUT"
+                fi
+          lockRepo: false
 
 
 
