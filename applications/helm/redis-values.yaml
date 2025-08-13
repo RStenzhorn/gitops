@@ -1,5 +1,5 @@
 auth:
-  password: <path:development/data/sample-secret#lab-secret>
+  password: <path:argocd/data/sample-secret#lab-secret>
 master:
   resources:
     requests:
