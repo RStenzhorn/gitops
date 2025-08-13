@@ -6,11 +6,9 @@ metadata:
 
 spec:
   destination:
-    name: kind-lab-vault
     namespace: vault
   project: default
   sources:
-  
   - repoURL: https://helm.releases.hashicorp.com
     chart: vault
     helm:
