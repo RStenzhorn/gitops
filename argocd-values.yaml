@@ -1,3 +1,60 @@
+global:
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: "v3.0.12"
+  logging:
+    format: json
+    level: info
+
+configs:
+  params:
+    server.insecure: true
+
+controller:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 2Gi
+    requests:
+      cpu: 0
+      memory: 0
+
+dex:
+  enabled: false
+
+server:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 0
+      memory: 0
+
+applicationSet:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 0
+      memory: 0
+
+redis:
+  image:
+    repository: docker.io/redis
+    tag: 8.0.2-alpine
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 0
+      memory: 0
+notifications:
+  enabled: false
+
+
 repoServer:
   volumes:
     - configMap:
@@ -30,9 +87,9 @@ repoServer:
         - name: ARGOCD_ENV_AVP_AUTH_TYPE
           value: "k8s"
         - name: ARGOCD_ENV_AVP_K8S_ROLE
-          value: "argocd"
+          value: argocd
         - name: ARGOCD_ENV_AVP_TYPE
-          value : "vault"
+          value : vault
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
@@ -43,26 +100,24 @@ repoServer:
           name: plugins
         - mountPath: /tmp
           name: tmp
-        # Register plugins into sidecar
         - mountPath: /home/argocd/cmp-server/config/plugin.yaml
           subPath: avp.yaml
           name: cmp-plugin
-        # Important: Mount tools into $PATH
         - name: custom-tools
           subPath: argocd-vault-plugin
           mountPath: /usr/local/bin/argocd-vault-plugin
     - name: avp-helm
       command: [/var/run/argocd/argocd-cmp-server]
-      image: quay.io/argoproj/argocd:v2.7.9
+      image: quay.io/argoproj/argocd:v3.0.12
       env:
         - name: ARGOCD_ENV_VAULT_ADDR
           value: "http://vault.vault:8200"
         - name: ARGOCD_ENV_AVP_AUTH_TYPE
           value: "k8s"
         - name: ARGOCD_ENV_AVP_K8S_ROLE
-          value: "argocd"
+          value: argocd
         - name: ARGOCD_ENV_AVP_TYPE
-          value : "vault"
+          value : vault
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
@@ -123,20 +178,12 @@ extraObjects:
               command:
                 - sh
                 - "-c"
-                - "find . -name 'Chart.yaml' && find . -name 'values.yaml'"
+                - "find . -name 'Chart.yaml' | grep -qz . && find . -name 'values.yaml'"
           generate:
             command:
-              - bash
+              - sh
               - "-c"
               - |
-                HELM_OUTPUT=$(helm template $ARGOCD_APP_NAME -n $ARGOCD_APP_NAMESPACE -f <(echo "$ARGOCD_ENV_HELM_VALUES") .)
-                SKIP_VAULT=$(echo "$ARGOCD_ENV_HELM_VALUES" | grep -i "skipVaultPlugin" | grep -i "true" || true)
-                if [[ -z "$SKIP_VAULT" ]]; then
-                  echo "$HELM_OUTPUT" | argocd-vault-plugin generate -
-                else
-                  echo "$HELM_OUTPUT"
-                fi
+                helm template $ARGOCD_APP_NAME --include-crds . |
+                argocd-vault-plugin generate -
           lockRepo: false
-
-
-
